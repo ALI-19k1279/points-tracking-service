@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import appConfig from '@config/app.config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { PointsModule } from './modules/points/points.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { APP_GUARD } from '@nestjs/core';
       },
     ]),
     UserModule,
+    PointsModule,
   ],
   controllers: [],
   providers: [
