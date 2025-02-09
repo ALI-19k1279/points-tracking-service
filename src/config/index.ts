@@ -1,1 +1,1 @@
-export { AppConfig } from './app-config.type';
+export { AllConfigType } from './config.interface';

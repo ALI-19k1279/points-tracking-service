@@ -20,7 +20,7 @@ class EnvironmentVariablesValidator {
 const DEFAULT_CONFIG = {
   nodeEnv: 'development' as Environment,
   port: 3000,
-  apiPrefix: 'api',
+  apiPrefix: '/api',
 } as const;
 
 const parsePort = (port: string | undefined): number => {
@@ -29,7 +29,7 @@ const parsePort = (port: string | undefined): number => {
   return isNaN(parsedPort) ? DEFAULT_CONFIG.port : parsedPort;
 };
 
-export default registerAs<AppConfig>('PointsTrackingService', () => {
+export default registerAs<AppConfig>('app', () => {
   validateConfig(process.env, EnvironmentVariablesValidator);
 
   return {
