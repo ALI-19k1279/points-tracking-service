@@ -56,7 +56,7 @@ async function bootstrap() {
     app.enableShutdownHooks();
 
     const options = new DocumentBuilder()
-      .setTitle('API')
+      .setTitle('Points Tracking Service')
       .setDescription('API docs')
       .setVersion('1.0')
       .build();
