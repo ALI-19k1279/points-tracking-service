@@ -1,4 +1,4 @@
-import { ENV_TYPES, ERROR_MESSAGES } from '@common/constants';
+import { Environment, ERROR_MESSAGES } from '@common/constants';
 import {
   ExceptionFilter,
   Catch,
@@ -31,9 +31,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   private getErrorMessage(exception: any): string {
     const isEnvValidForCompleteError = [
-      ENV_TYPES.LOCAL,
-      ENV_TYPES.DEVELOPMENT,
-    ].includes(process.env.NODE_ENV as string);
+      Environment.LOCAL,
+      Environment.DEVELOPMENT,
+    ].includes(process.env.NODE_ENV as Environment);
     if (
       !isEnvValidForCompleteError &&
       exception instanceof InternalServerErrorException
