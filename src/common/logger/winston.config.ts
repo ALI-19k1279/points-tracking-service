@@ -1,7 +1,8 @@
+import { ENV_TYPES } from '@common/constants';
 import { utilities, WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === ENV_TYPES.PRODUCTION;
 
 const logLevels = {
   error: 0,
