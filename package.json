@@ -17,7 +17,13 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "docker:build": "docker build -t points-tracking-service .",
+    "docker:run": "docker run -p 3000:3000 points-tracking-service",
+    "docker:dev": "docker-compose up",
+    "docker:dev:build": "docker-compose up --build",
+    "docker:prod": "docker-compose -f docker-compose.yml -f docker-compose.prod.yml up",
+    "docker:prod:build": "docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
