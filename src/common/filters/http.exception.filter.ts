@@ -1,25 +1,46 @@
+import { ENV_TYPES, ERROR_MESSAGES } from '@common/constants';
 import {
   ExceptionFilter,
   Catch,
   ArgumentsHost,
   HttpException,
+  InternalServerErrorException,
+  HttpStatus,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
+  catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
-    const status = exception.getStatus();
-    const exceptionResponse = exception.getResponse();
+    const response = ctx.getResponse();
+    const request = ctx.getRequest();
 
-    response.status(status).json({
-      statusCode: status,
+    const statusCode =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const message = this.getErrorMessage(exception);
+
+    response.status(statusCode).json({
+      statusCode,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: exceptionResponse['message'] || exception.message,
+      message,
     });
+  }
+
+  private getErrorMessage(exception: any): string {
+    const isEnvValidForCompleteError = [
+      ENV_TYPES.LOCAL,
+      ENV_TYPES.DEVELOPMENT,
+    ].includes(process.env.NODE_ENV as string);
+    if (
+      !isEnvValidForCompleteError &&
+      exception instanceof InternalServerErrorException
+    ) {
+      return ERROR_MESSAGES.SOMETHING_WENT_WRONG;
+    } else {
+      return exception.message;
+    }
   }
 }
