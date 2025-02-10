@@ -5,6 +5,7 @@ import appConfig from '@config/app.config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PointsModule } from './modules/points/points.module';
+import { RouteLoggerMiddleware } from '@common/middleware';
 
 @Module({
   imports: [
@@ -42,4 +43,8 @@ import { PointsModule } from './modules/points/points.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer) {
+    consumer.apply(RouteLoggerMiddleware).forRoutes('*');
+  }
+}
