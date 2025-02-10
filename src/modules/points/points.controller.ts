@@ -9,7 +9,6 @@ import {
 import { AddTransactionDto, SpendPointsDto } from './dto';
 import { PointsService } from './points.service';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
-import { Http } from 'winston/lib/winston/transports';
 
 @Controller('points')
 export class PointsController {
