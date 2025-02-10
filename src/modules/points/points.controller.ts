@@ -33,7 +33,7 @@ export class PointsController {
     return this.pointsService.spendPoints(spendPoints.points);
   }
 
-  @Get('balances')
+  @Get('balance')
   @ApiOperation({ summary: API_OPERATION.GET_BALANCES })
   @HttpCode(HttpStatus.OK)
   getBalances() {

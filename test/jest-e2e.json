@@ -5,5 +5,13 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "setupFiles": ["<rootDir>/jest-e2e.setup.js"],
+  "moduleNameMapper": {
+    "^@src/(.*)$": "<rootDir>/../src/$1",
+    "^@common/(.*)$": "<rootDir>/../src/common/$1",
+    "^@config/(.*)$": "<rootDir>/../src/config/$1",
+    "^@libs/(.*)$": "<rootDir>/../src/libs/$1",
+    "^@modules/(.*)$": "<rootDir>/../src/modules/$1"
   }
 }
