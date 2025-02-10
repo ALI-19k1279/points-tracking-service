@@ -8,30 +8,33 @@ import {
 } from '@nestjs/common';
 import { AddTransactionDto, SpendPointsDto } from './dto';
 import { PointsService } from './points.service';
-import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { API_OPERATION, CONTROLLER } from './constants';
+import { API_TAGS } from '@common/constants/api-tags';
 
-@Controller('points')
+@ApiTags(API_TAGS.POINTS)
+@Controller(CONTROLLER.POINTS)
 export class PointsController {
   constructor(private readonly pointsService: PointsService) {}
 
   @Post('add')
-  @ApiBody({ type: AddTransactionDto })
-  @ApiOperation({ summary: 'Add a transaction' })
+  @ApiBody({ type: AddTransactionDto, isArray: true })
+  @ApiOperation({ summary: API_OPERATION.ADD_TRANSACTION })
   @HttpCode(HttpStatus.CREATED)
-  addTransaction(@Body() transaction: AddTransactionDto) {
-    return this.pointsService.addTransaction(transaction);
+  addTransaction(@Body() transactions: AddTransactionDto[]) {
+    return this.pointsService.addTransaction(transactions);
   }
 
   @Post('spend')
   @ApiBody({ type: SpendPointsDto })
-  @ApiOperation({ summary: 'Spend points' })
+  @ApiOperation({ summary: API_OPERATION.SPEND_POINTS })
   @HttpCode(HttpStatus.OK)
   spendPoints(@Body() spendPoints: SpendPointsDto) {
     return this.pointsService.spendPoints(spendPoints.points);
   }
 
   @Get('balances')
-  @ApiOperation({ summary: 'Get balances' })
+  @ApiOperation({ summary: API_OPERATION.GET_BALANCES })
   @HttpCode(HttpStatus.OK)
   getBalances() {
     return this.pointsService.getBalances();

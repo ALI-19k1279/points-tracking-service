@@ -7,10 +7,11 @@ import {
 } from '@nestjs/common';
 import { HttpExceptionFilter } from '@common/filters';
 import helmet from 'helmet';
-import { loggerInstance } from '@common/logger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from '@config/config.interface';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { loggerInstance } from '@common/logger';
 
 async function handleShutdown(signal: string, app: INestApplication) {
   loggerInstance.warn(
@@ -24,13 +25,14 @@ async function handleShutdown(signal: string, app: INestApplication) {
 async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule, {
-      logger: loggerInstance,
+      bufferLogs: true,
     });
 
     const configService = app.get(ConfigService<AllConfigType>);
 
     app.enableCors();
     app.use(helmet());
+    app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
     app.setGlobalPrefix(
       configService.getOrThrow('app.apiPrefix', { infer: true }),

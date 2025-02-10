@@ -46,7 +46,7 @@ const prodTransports = [
   }),
 ];
 
-const winstonConfig = {
+export const winstonConfig = {
   levels: logLevels,
   transports: isProd ? prodTransports : devTransports,
 };
