@@ -13,6 +13,7 @@ import {
 import { ERROR_MESSAGES } from '@common/constants';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { sortByTimestamp } from '@libs/utils';
 
 @Injectable()
 export class PointsService {
@@ -23,6 +24,62 @@ export class PointsService {
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
 
+  private validateTransactionRequest(transactions: Transaction[]): void {
+    const tempBalance: Record<string, number> = { ...this.balances };
+    for (const transaction of transactions) {
+      const currentBalance = tempBalance[transaction.payer] || 0;
+      tempBalance[transaction.payer] = currentBalance + transaction.points;
+
+      if (tempBalance[transaction.payer] < 0) {
+        throw new BadRequestException(
+          ERROR_MESSAGES.NEGATIVE_BALANCE(
+            transaction.payer,
+            transaction.timestamp.toISOString(),
+          ),
+        );
+      }
+    }
+  }
+
+  private validateSpendPointsRequest(pointsToSpend: number): void {
+    if (pointsToSpend <= 0) {
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_REQUEST);
+    }
+
+    const totalPoints = Object.values(this.balances).reduce(
+      (sum, points) => sum + points,
+      0,
+    );
+
+    if (pointsToSpend > totalPoints) {
+      throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_POINTS);
+    }
+  }
+
+  private calculateAvailablePoints(
+    transaction: Transaction,
+    sortedTransactions: Transaction[],
+    processedTransactions: Transaction[],
+  ): number {
+    const futureNegativePoints = sortedTransactions
+      .filter(
+        (t) =>
+          t.payer === transaction.payer &&
+          t.points < 0 &&
+          t.timestamp > transaction.timestamp &&
+          !processedTransactions.includes(t),
+      )
+      .reduce((sum, t) => sum + t.points, 0);
+
+    return transaction.points + futureNegativePoints;
+  }
+
+  private updateBalances(spentPoints: PayerRemainingBalance): void {
+    Object.entries(spentPoints).forEach(([payer, points]) => {
+      this.balances[payer] += points;
+    });
+  }
+
   addTransaction(transactions: AddTransactionDto[]): Array<Transaction> {
     try {
       const newTransactions: Transaction[] = transactions.map((t) => ({
@@ -31,25 +88,12 @@ export class PointsService {
         timestamp: new Date(t.timestamp),
       }));
 
-      const allTransactions = [...this.transactions, ...newTransactions].sort(
-        (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
-      );
+      const allTransactions = sortByTimestamp([
+        ...this.transactions,
+        ...newTransactions,
+      ]);
 
-      let tempBalance: Record<string, number> = { ...this.balances };
-
-      for (const transaction of allTransactions) {
-        const currentBalance = tempBalance[transaction.payer] || 0;
-        tempBalance[transaction.payer] = currentBalance + transaction.points;
-
-        if (tempBalance[transaction.payer] < 0) {
-          throw new BadRequestException(
-            ERROR_MESSAGES.NEGATIVE_BALANCE(
-              transaction.payer,
-              transaction.timestamp.toISOString(),
-            ),
-          );
-        }
-      }
+      this.validateTransactionRequest(allTransactions);
 
       for (const transaction of newTransactions) {
         this.transactions.push(transaction);
@@ -71,18 +115,9 @@ export class PointsService {
 
   spendPoints(pointsToSpend: number): SpendPointsResponse[] {
     try {
-      const totalPoints = Object.values(this.balances).reduce(
-        (sum, points) => sum + points,
-        0,
-      );
-      if (pointsToSpend > totalPoints) {
-        throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_POINTS);
-      }
+      this.validateSpendPointsRequest(pointsToSpend);
 
-      const sortedTransactions = [...this.transactions].sort(
-        (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
-      );
-
+      const sortedTransactions = sortByTimestamp(this.transactions);
       const spentPoints: PayerRemainingBalance = {};
       let remainingPointsToSpend = pointsToSpend;
       const processedTransactions: Transaction[] = [];
@@ -91,19 +126,12 @@ export class PointsService {
         if (remainingPointsToSpend <= 0) break;
 
         const payer = transaction.payer;
-        let pointsAvailable = transaction.points;
 
-        const futureNegativePoints = sortedTransactions
-          .filter(
-            (t) =>
-              t.payer === payer &&
-              t.points < 0 &&
-              t.timestamp > transaction.timestamp &&
-              !processedTransactions.includes(t),
-          )
-          .reduce((sum, t) => sum + t.points, 0);
-
-        pointsAvailable += futureNegativePoints;
+        const pointsAvailable = this.calculateAvailablePoints(
+          transaction,
+          sortedTransactions,
+          processedTransactions,
+        );
 
         if (pointsAvailable <= 0) {
           processedTransactions.push(transaction);
@@ -120,9 +148,7 @@ export class PointsService {
         processedTransactions.push(transaction);
       }
 
-      Object.entries(spentPoints).forEach(([payer, points]) => {
-        this.balances[payer] += points;
-      });
+      this.updateBalances(spentPoints);
 
       const response = Object.entries(spentPoints).map(([payer, points]) => ({
         payer,
