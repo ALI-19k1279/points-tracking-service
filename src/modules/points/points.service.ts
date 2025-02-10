@@ -4,7 +4,7 @@ import {
   PayerRemainingBalance,
   SpendPointsResponse,
   Transaction,
-} from './interfaces/transaction.interface';
+} from './types';
 
 @Injectable()
 export class PointsService {
