@@ -28,13 +28,13 @@ export class RouteLoggerMiddleware implements NestMiddleware {
     const { statusCode } = response;
     const responseTime = Date.now() - startTime;
     const browserInfo = BrowserInfoParser.parse(
-      request.headers['user-agent'] || '',
+      request.headers['user-agent'] ?? '',
     );
 
     const ip =
-      request.ip ||
-      (request.headers['x-forwarded-for'] as string) ||
-      request.socket.remoteAddress ||
+      request.ip ??
+      (request.headers['x-forwarded-for'] as string) ??
+      request.socket.remoteAddress ??
       'unknown';
 
     return {

@@ -4,7 +4,6 @@ import {
   INestApplication,
   ValidationPipe,
   VersioningType,
-  Logger,
 } from '@nestjs/common';
 import { HttpExceptionFilter } from '@common/filters';
 import helmet from 'helmet';

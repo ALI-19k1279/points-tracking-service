@@ -9,8 +9,8 @@ export class BrowserInfoParser {
 
     return {
       deviceType: userAgent.includes('Mobile') ? 'Mobile' : 'Browser',
-      browserName: regexResult?.[1] || 'Unknown',
-      browserVersion: regexResult?.[2] || 'Unknown',
+      browserName: regexResult?.[1] ?? 'Unknown',
+      browserVersion: regexResult?.[2] ?? 'Unknown',
     };
   }
 }
