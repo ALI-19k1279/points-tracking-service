@@ -17,7 +17,7 @@ import { API_TAGS } from '@common/constants/api-tags';
 export class PointsController {
   constructor(private readonly pointsService: PointsService) {}
 
-  @Post('add')
+  @Post('transactions')
   @ApiBody({ type: AddTransactionDto, isArray: true })
   @ApiOperation({ summary: API_OPERATION.ADD_TRANSACTION })
   @HttpCode(HttpStatus.CREATED)
@@ -33,7 +33,7 @@ export class PointsController {
     return this.pointsService.spendPoints(spendPoints.points);
   }
 
-  @Get('balance')
+  @Get('balances')
   @ApiOperation({ summary: API_OPERATION.GET_BALANCES })
   @HttpCode(HttpStatus.OK)
   getBalances() {

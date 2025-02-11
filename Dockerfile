@@ -4,9 +4,7 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml ./
-COPY package*.json ./
-COPY tsconfig*.json ./
+COPY pnpm-lock.yaml package*.json tsconfig*.json ./
 
 RUN pnpm install --frozen-lockfile
 
@@ -20,17 +18,14 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY pnpm-lock.yaml ./
-
-RUN pnpm install --frozen-lockfile --prod
-
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY .env ./
 
 RUN apk --no-cache add curl
 
 ENV NODE_ENV=production
-ENV PORT=3000
 
 EXPOSE ${PORT}
 
