@@ -2,6 +2,12 @@
 
 A RESTful service built with NestJS that manages user points transactions and balances with specific spending rules.
 
+## What is NestJS?
+
+Nest (NestJS) is a framework for building efficient server-side applications in Node.js. It supports both TypeScript and JavaScript and combines concepts from Object Oriented Programming, Functional Programming, and Functional Reactive Programming.
+
+Nest uses popular HTTP server frameworks like Express by default and can also work with Fastify. It offers an abstraction over these frameworks but still allows direct access to their APIs. This flexibility enables developers to use various third-party modules available for the underlying platform.
+
 ## System Requirements
 
 The service maintains user point balances with the following rules:
@@ -55,7 +61,18 @@ Before running this service, ensure you have:
    pnpm install
    ```
 
-3. **Start the service**
+3. **Environment Setup**
+
+   ```bash
+   1. Locate and refer the .env.example file in the project root
+   2. Create the following files:
+
+   .env (for development)
+   .env.test.local (for testing)
+
+   ```
+
+4. **Start the service**
 
    ```bash
    # Development mode
@@ -65,8 +82,9 @@ Before running this service, ensure you have:
    pnpm run start:prod
    ```
 
-4. **Access the API documentation**
-   - Open `http://localhost:3000/api-docs` in your browser
+5. **Access the API documentation**
+   - Open `http://localhost:<PORT>/api-docs` in your browser (local environmet)
+   - Open `<your-domain>/api-docs` (othe environments)
 
 ## API Endpoints
 
