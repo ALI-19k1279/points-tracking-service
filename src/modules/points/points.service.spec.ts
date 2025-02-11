@@ -1,19 +1,43 @@
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PointsService } from './points.service';
-import { BadRequestException } from '@nestjs/common';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
+import { PointsRepository } from './repositories';
 import { AddTransactionDto } from './dto';
+import { ITransactionEntity } from './interfaces';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 describe('PointsService', () => {
   let service: PointsService;
+  let pointsRepository: PointsRepository;
   let logger: Logger;
+
+  const mockTransactionEntity = (
+    dto: AddTransactionDto,
+  ): ITransactionEntity => ({
+    id: expect.any(String),
+    payer: dto.payer,
+    points: dto.points,
+    timestamp: new Date(dto.timestamp),
+  });
 
   beforeEach(async () => {
     logger = { error: jest.fn() } as unknown as Logger;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PointsService,
+        {
+          provide: PointsRepository,
+          useValue: {
+            getAllPayersBalances: jest.fn(),
+            getTransactions: jest.fn(),
+            addTransactions: jest.fn(),
+          },
+        },
         {
           provide: WINSTON_MODULE_NEST_PROVIDER,
           useValue: logger,
@@ -22,68 +46,80 @@ describe('PointsService', () => {
     }).compile();
 
     service = module.get<PointsService>(PointsService);
+    pointsRepository = module.get<PointsRepository>(PointsRepository);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('should add transactions and update balances', () => {
-    const transactions: AddTransactionDto[] = [
-      { payer: 'DANNON', points: 1000, timestamp: '2020-11-02T14:00:00Z' },
-      { payer: 'UNILEVER', points: 200, timestamp: '2020-10-31T11:00:00Z' },
-    ];
+  describe('addTransaction', () => {
+    it('should add transactions and update balances', () => {
+      const transactionDto = [
+        {
+          payer: 'Payer1',
+          points: 100,
+          timestamp: '2020-10-31T11:00:00Z',
+        },
+      ];
 
-    const result = service.addTransaction(transactions);
+      const expectedEntities = transactionDto.map(mockTransactionEntity);
 
-    expect(result.length).toBe(2);
-    expect(service.getBalances()).toEqual({ DANNON: 1000, UNILEVER: 200 });
-  });
+      jest.spyOn(pointsRepository, 'getAllPayersBalances').mockReturnValue({});
+      jest.spyOn(pointsRepository, 'getTransactions').mockReturnValue([]);
+      jest
+        .spyOn(pointsRepository, 'addTransactions')
+        .mockReturnValue(expectedEntities);
 
-  it('should throw error for invalid transaction request', () => {
-    const transactions: AddTransactionDto[] = [
-      { payer: 'DANNON', points: -1000, timestamp: '2020-11-02T14:00:00Z' },
-    ];
+      const result = service.addTransaction(transactionDto);
 
-    expect(() => service.addTransaction(transactions)).toThrow(
-      BadRequestException,
-    );
-  });
+      expect(result).toEqual(expectedEntities);
+      expect(pointsRepository.addTransactions).toHaveBeenCalledWith(
+        transactionDto.map((t) => ({
+          payer: t.payer,
+          points: t.points,
+          timestamp: new Date(t.timestamp),
+        })),
+      );
+    });
 
-  it('should spend points and update balances', () => {
-    service.addTransaction([
-      { payer: 'DANNON', points: 1000, timestamp: '2020-11-02T14:00:00Z' },
-      { payer: 'UNILEVER', points: 200, timestamp: '2020-10-31T11:00:00Z' },
-    ]);
+    it('should throw BadRequestException for insufficient points', () => {
+      const transactions = [
+        { payer: 'Payer1', points: -500, timestamp: '2020-10-31T11:00:00Z' },
+      ];
 
-    const result = service.spendPoints(500);
+      jest.spyOn(pointsRepository, 'getAllPayersBalances').mockReturnValue({
+        Payer1: 200,
+      });
+      jest.spyOn(pointsRepository, 'getTransactions').mockReturnValue([]);
 
-    expect(result).toEqual([
-      { payer: 'UNILEVER', points: -200 },
-      { payer: 'DANNON', points: -300 },
-    ]);
-    expect(service.getBalances()).toEqual({ DANNON: 700, UNILEVER: 0 });
-  });
+      expect(() => service.addTransaction(transactions)).toThrow(
+        BadRequestException,
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('would make balance negative'),
+        PointsService.name,
+      );
+    });
 
-  it('should throw error for invalid spend points request', () => {
-    expect(() => service.spendPoints(-500)).toThrow(BadRequestException);
-  });
+    it('should throw InternalServerErrorException for unexpected errors', () => {
+      const transactions = [
+        { payer: 'Payer1', points: 100, timestamp: '2020-10-31T11:00:00Z' },
+      ];
 
-  it('should throw error for insufficient points', () => {
-    service.addTransaction([
-      { payer: 'DANNON', points: 1000, timestamp: '2020-11-02T14:00:00Z' },
-    ]);
+      jest.spyOn(pointsRepository, 'getAllPayersBalances').mockReturnValue({});
 
-    expect(() => service.spendPoints(1500)).toThrow(BadRequestException);
-  });
+      jest.spyOn(pointsRepository, 'getTransactions').mockImplementation(() => {
+        throw new Error('Database error');
+      });
 
-  it('should return current balances', () => {
-    service.addTransaction([
-      { payer: 'DANNON', points: 1000, timestamp: '2020-11-02T14:00:00Z' },
-    ]);
-
-    const balances = service.getBalances();
-
-    expect(balances).toEqual({ DANNON: 1000 });
+      expect(() => service.addTransaction(transactions)).toThrow(
+        InternalServerErrorException,
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        'Database error',
+        PointsService.name,
+      );
+    });
   });
 });

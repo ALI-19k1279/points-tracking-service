@@ -52,7 +52,6 @@ export class PointsService {
       0,
     );
 
-    console.log('TOTAL POINTS', totalPoints);
     if (pointsToSpend > totalPoints) {
       throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_POINTS);
     }
