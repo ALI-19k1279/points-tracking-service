@@ -1,163 +1,322 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Points Tracking Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A RESTful service built with NestJS that manages user points transactions and balances with specific spending rules.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## System Requirements
 
-## Description
+The service maintains user point balances with the following rules:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Points are tracked per payer
+- When spending points:
+  1. Oldest points (by transaction date) are spent first
+  2. No payer's points can go negative
+- Each transaction includes payer (string), points (integer), and timestamp (date)
 
-## Project setup
+## Features
 
-```bash
-$ pnpm install
-```
+- Add transaction records for specific payers and dates
+- Spend points following the specified rules
+- Get point balances for all payers
+- In-memory data storage
+- Test coverage
+- API documentation
+- Docker support
 
-## Compile and run the project
+## Prerequisites
 
-```bash
-# development
-$ pnpm run start
+Before running this service, ensure you have:
 
-# watch mode
-$ pnpm run start:dev
+1. **Node.js** (version 16 or higher)
 
-# production mode
-$ pnpm run start:prod
-```
+   - Download from: https://nodejs.org/
+   - Verify with: `node --version`
 
-## Run tests
+2. **pnpm** (Package Manager)
 
-```bash
-# unit tests
-$ pnpm run test
+   - Install: `npm install -g pnpm`
+   - Verify with: `pnpm --version`
 
-# e2e tests
-$ pnpm run test:e2e
+3. **Docker** (Optional, for containerized deployment)
+   - Download from: https://www.docker.com/products/docker-desktop
+   - Verify with: `docker --version`
 
-# test coverage
-$ pnpm run test:cov
-```
+## Quick Start
 
-## How to Run This Project
-
-This section will guide you through the steps to run this project, assuming you have not worked with this language/framework before.
-
-### Prerequisites
-
-1. **Node.js**: Ensure you have Node.js installed. You can download it from [nodejs.org](https://nodejs.org/).
-2. **pnpm**: This project uses `pnpm` as the package manager. Install it globally using npm:
-   ```bash
-   npm install -g pnpm
-   ```
-
-### Project Setup
-
-1. **Clone the repository**:
+1. **Clone the repository**
 
    ```bash
    git clone <repository-url>
    cd points-tracking-service
    ```
 
-2. **Install dependencies**:
+2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
-### Running the Project
-
-1. **Development mode**:
+3. **Start the service**
 
    ```bash
-   pnpm run start
-   ```
-
-2. **Watch mode**:
-
-   ```bash
+   # Development mode
    pnpm run start:dev
-   ```
 
-3. **Production mode**:
-   ```bash
+   # Production mode
    pnpm run start:prod
    ```
 
-### Running Tests
+4. **Access the API documentation**
+   - Open `http://localhost:3000/api-docs` in your browser
 
-1. **Unit tests**:
+## API Endpoints
+
+### 1. Add bulk transactions
+
+```http
+POST /api/v1/points/transactions
+
+Request:
+[{
+    "payer": "SHOPIFY",
+    "points": 1000,
+    "timestamp": "2024-07-02T14:00:00Z"
+}]
+
+Response:
+[{
+    "id": "uuid",
+    "payer": "SHOPIFY",
+    "points": 1000,
+    "timestamp": "2024-07-02T14:00:00Z"
+}]
+```
+
+### 2. Spend Points
+
+```http
+POST /api/v1/points/spend
+
+Request:
+{
+    "points": 5000
+}
+
+Response:
+[
+    { "payer": "SHOPIFY", "points": -100 },
+    { "payer": "EBAY", "points": -200 },
+    { "payer": "AMAZON", "points": -4700 }
+]
+```
+
+### 3. Get Balances
+
+```http
+GET /api/v1/points/balances
+
+Response:
+{
+    "SHOPIFY": 1000,
+    "EBAY": 0,
+    "AMAZON": 5300
+}
+```
+
+## Example Usage
+
+1. **Add bulk transactions:**
+
+   ```bash
+   curl -X POST http://localhost:3000/api/v1/points/transactions \
+   -H "Content-Type: application/json" \
+   -d '[{
+       "payer": "SHOPIFY",
+       "points": 1000,
+       "timestamp": "2024-07-02T14:00:00Z"
+   }]'
+   ```
+
+2. **Spend points:**
+
+   ```bash
+   curl -X POST http://localhost:3000/api/v1/points/spend \
+   -H "Content-Type: application/json" \
+   -d '{
+       "points": 5000
+   }'
+   ```
+
+3. **Check balances:**
+   ```bash
+   curl http://localhost:3000/api/v1/points/balances
+   ```
+
+## Project Structure
+
+```
+src/
+│   app.module.ts
+│   main.ts
+│
+├───common
+│   ├───constants
+│   │       api-tags.ts
+│   │       env-enum.ts
+│   │       error-messages.ts
+│   │       index.ts
+│   │
+│   ├───filters
+│   │       http.exception.filter.ts
+│   │       index.ts
+│   │
+│   ├───interceptor
+│   │       index.ts
+│   │
+│   ├───interfaces
+│   │       base-entity.interface.ts
+│   │       generic-repository.interface.ts
+│   │       index.ts
+│   │
+│   ├───logger
+│   │       index.ts
+│   │       winston.config.ts
+│   │
+│   └───middleware
+│       │   index.ts
+│       │   route-logger.middleware.ts
+│       │
+│       └───types
+│               index.ts
+│
+├───config
+│       app-config.type.ts
+│       app.config.ts
+│       config.interface.ts
+│       index.ts
+│
+├───libs
+│   └───utils
+│           browser-info-parser.util.ts
+│           index.ts
+│           logger-formatter.util.ts
+│           sort-by-timestamp.util.ts
+│           validate-config.util.ts
+│
+└───modules
+    ├───points
+    │   │   points.controller.ts
+    │   │   points.module.ts
+    │   │   points.service.spec.ts
+    │   │   points.service.ts
+    │   │
+    │   ├───constants
+    │   │       index.ts
+    │   │
+    │   ├───dto
+    │   │   │   index.ts
+    │   │   │
+    │   │   ├───request
+    │   │   │       add-transaction.dto.ts
+    │   │   │       index.ts
+    │   │   │       spend-points.dto.ts
+    │   │   │
+    │   │   └───response
+    │   │           index.ts
+    │   │           spend-points-response.dto.ts
+    │   │
+    │   ├───interfaces
+    │   │       index.ts
+    │   │       points-repository.interface.ts
+    │   │       transaction-entity.interface.ts
+    │   │
+    │   ├───repositories
+    │   │       index.ts
+    │   │       points.repository.ts
+    │   │
+    │   └───types
+    │           balance.type.ts
+    │           index.ts
+    │
+    └───user
+            user.module.ts
+            user.service.spec.ts
+            user.service.ts
+```
+
+## Available Scripts
+
+```bash
+# Installation
+pnpm install
+
+# Development
+pnpm run start        # Start the application
+pnpm run start:dev    # Start with auto-reload
+pnpm run start:debug  # Start with debugging
+
+# Testing
+pnpm run test         # Run unit tests
+pnpm run test:e2e     # Run end-to-end tests
+pnpm run test:cov     # Generate test coverage
+
+# Production
+pnpm run start:prod   # Start in production mode
+
+# Docker
+pnpm run docker:dev   # Run with Docker in development mode
+pnpm run docker:prod  # Run with Docker in production mode
+```
+
+## Running with Docker
+
+1. **Build and run for development:**
+
+   ```bash
+   pnpm run docker:dev:build
+   ```
+
+2. **Build and run for production:**
+   ```bash
+   pnpm run docker:prod:build
+   ```
+
+## Testing
+
+1. **Run unit tests:**
 
    ```bash
    pnpm run test
    ```
 
-2. **End-to-end tests**:
+2. **Run e2e tests:**
 
    ```bash
    pnpm run test:e2e
    ```
 
-3. **Test coverage**:
+3. **Generate coverage report:**
    ```bash
    pnpm run test:cov
    ```
 
-## Deployment
+## Error Handling
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+The service returns standardized error responses:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g mau
-$ mau deploy
+```json
+{
+  "statusCode": <status code>,
+  "timestamp": <timestamp - ISO format>,
+  "path": <url path>,
+  "message": <server error message>,
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Common status codes:
 
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- 400: Bad Request
+- 500: Internal Server Error
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+[MIT License](LICENSE)
