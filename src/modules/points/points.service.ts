@@ -4,28 +4,28 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { AddTransactionDto } from './dto';
-import {
-  PayerRemainingBalance,
-  SpendPointsResponse,
-  Transaction,
-} from './types';
+import { AddTransactionDto, SpendPointsResponseDto } from './dto';
+import { PayerRemainingBalance } from './types';
 import { ERROR_MESSAGES } from '@common/constants';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { sortByTimestamp } from '@libs/utils';
+import { PointsRepository } from './repositories';
+import { ITransactionEntity } from './interfaces';
 
 @Injectable()
 export class PointsService {
-  private readonly transactions: Transaction[] = [];
-  private balances: PayerRemainingBalance = {};
-
   constructor(
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
+    private readonly pointsRepository: PointsRepository,
   ) {}
 
-  private validateTransactionRequest(transactions: Transaction[]): void {
-    const tempBalance: Record<string, number> = { ...this.balances };
+  private validateTransactionRequest(
+    transactions: Omit<ITransactionEntity, 'id'>[],
+  ): void {
+    const tempBalance: Record<string, number> =
+      this.pointsRepository.getAllPayersBalances();
+
     for (const transaction of transactions) {
       const currentBalance = tempBalance[transaction.payer] || 0;
       tempBalance[transaction.payer] = currentBalance + transaction.points;
@@ -46,20 +46,22 @@ export class PointsService {
       throw new BadRequestException(ERROR_MESSAGES.INVALID_REQUEST);
     }
 
-    const totalPoints = Object.values(this.balances).reduce(
+    const balances = this.pointsRepository.getAllPayersBalances();
+    const totalPoints = Object.values(balances).reduce(
       (sum, points) => sum + points,
       0,
     );
 
+    console.log('TOTAL POINTS', totalPoints);
     if (pointsToSpend > totalPoints) {
       throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_POINTS);
     }
   }
 
   private calculateAvailablePoints(
-    transaction: Transaction,
-    sortedTransactions: Transaction[],
-    processedTransactions: Transaction[],
+    transaction: ITransactionEntity,
+    sortedTransactions: ITransactionEntity[],
+    processedTransactions: ITransactionEntity[],
   ): number {
     const futureNegativePoints = sortedTransactions
       .filter(
@@ -74,34 +76,33 @@ export class PointsService {
     return transaction.points + futureNegativePoints;
   }
 
-  private updateBalances(spentPoints: PayerRemainingBalance): void {
-    Object.entries(spentPoints).forEach(([payer, points]) => {
-      this.balances[payer] += points;
-    });
-  }
-
-  addTransaction(transactions: AddTransactionDto[]): Array<Transaction> {
+  addTransaction(transactions: AddTransactionDto[]): Array<ITransactionEntity> {
     try {
-      const newTransactions: Transaction[] = transactions.map((t) => ({
-        payer: t.payer,
-        points: t.points,
-        timestamp: new Date(t.timestamp),
-      }));
+      const newTransactions: Omit<ITransactionEntity, 'id'>[] =
+        transactions.map((t) => ({
+          payer: t.payer,
+          points: t.points,
+          timestamp: new Date(t.timestamp),
+        }));
+
+      const existingTransactions: Omit<ITransactionEntity, 'id'>[] =
+        this.pointsRepository.getTransactions()?.map((t) => ({
+          payer: t.payer,
+          points: t.points,
+          timestamp: t.timestamp,
+        }));
 
       const allTransactions = sortByTimestamp([
-        ...this.transactions,
+        ...existingTransactions,
         ...newTransactions,
       ]);
 
       this.validateTransactionRequest(allTransactions);
 
-      for (const transaction of newTransactions) {
-        this.transactions.push(transaction);
-        this.balances[transaction.payer] =
-          (this.balances[transaction.payer] || 0) + transaction.points;
-      }
+      const updatedTransactions =
+        this.pointsRepository.addTransactions(newTransactions);
 
-      return this.transactions;
+      return updatedTransactions;
     } catch (error) {
       this.logger.error(error.message, PointsService.name);
       if (error instanceof BadRequestException) {
@@ -113,14 +114,16 @@ export class PointsService {
     }
   }
 
-  spendPoints(pointsToSpend: number): SpendPointsResponse[] {
+  spendPoints(pointsToSpend: number): SpendPointsResponseDto[] {
     try {
       this.validateSpendPointsRequest(pointsToSpend);
 
-      const sortedTransactions = sortByTimestamp(this.transactions);
+      const transactions = this.pointsRepository.getTransactions();
+
+      const sortedTransactions = sortByTimestamp(transactions);
       const spentPoints: PayerRemainingBalance = {};
       let remainingPointsToSpend = pointsToSpend;
-      const processedTransactions: Transaction[] = [];
+      const processedTransactions: ITransactionEntity[] = [];
 
       for (const transaction of sortedTransactions) {
         if (remainingPointsToSpend <= 0) break;
@@ -148,9 +151,11 @@ export class PointsService {
         processedTransactions.push(transaction);
       }
 
-      this.updateBalances(spentPoints);
+      this.pointsRepository.updateBalances(spentPoints);
 
-      const response = Object.entries(spentPoints).map(([payer, points]) => ({
+      const response: SpendPointsResponseDto[] = Object.entries(
+        spentPoints,
+      ).map(([payer, points]) => ({
         payer,
         points,
       }));
@@ -169,6 +174,6 @@ export class PointsService {
   }
 
   getBalances(): PayerRemainingBalance {
-    return this.balances;
+    return this.pointsRepository.getAllPayersBalances();
   }
 }

@@ -1,5 +1,6 @@
 type EntityToSort = {
   timestamp: Date;
+  id?: string;
 };
 
 export const sortByTimestamp = <T extends EntityToSort>(
@@ -7,7 +8,9 @@ export const sortByTimestamp = <T extends EntityToSort>(
   order: 'asc' | 'desc' = 'asc',
 ): T[] => {
   return [...items].sort((a, b) => {
-    const comparison = a.timestamp.getTime() - b.timestamp.getTime();
+    const timestampA = a.timestamp.getTime();
+    const timestampB = b.timestamp.getTime();
+    const comparison = timestampA - timestampB;
     return order === 'asc' ? comparison : -comparison;
   });
 };
