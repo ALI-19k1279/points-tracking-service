@@ -58,6 +58,70 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## How to Run This Project
+
+This section will guide you through the steps to run this project, assuming you have not worked with this language/framework before.
+
+### Prerequisites
+
+1. **Node.js**: Ensure you have Node.js installed. You can download it from [nodejs.org](https://nodejs.org/).
+2. **pnpm**: This project uses `pnpm` as the package manager. Install it globally using npm:
+   ```bash
+   npm install -g pnpm
+   ```
+
+### Project Setup
+
+1. **Clone the repository**:
+
+   ```bash
+   git clone <repository-url>
+   cd points-tracking-service
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
+
+### Running the Project
+
+1. **Development mode**:
+
+   ```bash
+   pnpm run start
+   ```
+
+2. **Watch mode**:
+
+   ```bash
+   pnpm run start:dev
+   ```
+
+3. **Production mode**:
+   ```bash
+   pnpm run start:prod
+   ```
+
+### Running Tests
+
+1. **Unit tests**:
+
+   ```bash
+   pnpm run test
+   ```
+
+2. **End-to-end tests**:
+
+   ```bash
+   pnpm run test:e2e
+   ```
+
+3. **Test coverage**:
+   ```bash
+   pnpm run test:cov
+   ```
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
