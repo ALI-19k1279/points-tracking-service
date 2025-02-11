@@ -4,9 +4,14 @@ import { ConfigModule } from '@nestjs/config';
 import appConfig from '@config/app.config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { PointsModule } from './modules/points/points.module';
+import { RouteLoggerMiddleware } from '@common/middleware';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from '@common/logger';
 
 @Module({
   imports: [
+    WinstonModule.forRoot(winstonConfig),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
@@ -30,6 +35,7 @@ import { APP_GUARD } from '@nestjs/core';
       },
     ]),
     UserModule,
+    PointsModule,
   ],
   controllers: [],
   providers: [
@@ -40,4 +46,8 @@ import { APP_GUARD } from '@nestjs/core';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer) {
+    consumer.apply(RouteLoggerMiddleware).forRoutes('*');
+  }
+}

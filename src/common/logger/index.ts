@@ -1,1 +1,1 @@
-export { loggerInstance } from './winston.config';
+export { winstonConfig, loggerInstance } from './winston.config';
