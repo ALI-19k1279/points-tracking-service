@@ -43,7 +43,7 @@ describe('AppController (e2e)', () => {
         .expect(201);
 
       const initialBalance = await request(app.getHttpServer())
-        .get('/api/points/balance')
+        .get('/api/points/balances')
         .expect(200);
 
       expect(initialBalance.body).toEqual({
@@ -59,7 +59,7 @@ describe('AppController (e2e)', () => {
       expect(Array.isArray(spendResponse.body)).toBeTruthy();
 
       const finalBalance = await request(app.getHttpServer())
-        .get('/api/points/balance')
+        .get('/api/points/balances')
         .expect(200);
 
       const totalRemaining = Object.values(finalBalance.body).reduce(
