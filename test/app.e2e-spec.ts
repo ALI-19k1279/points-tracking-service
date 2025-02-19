@@ -38,7 +38,7 @@ describe('AppController (e2e)', () => {
 
     it('should handle complete points workflow', async () => {
       await request(app.getHttpServer())
-        .post('/api/points/add')
+        .post('/api/points/transactions')
         .send(testTransactions)
         .expect(201);
 
